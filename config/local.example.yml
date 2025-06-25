@@ -4,12 +4,12 @@ database:
   host: "localhost"
   post: 5432
   user: "postgres"
-  password: "3356"
-  dbname: "l0"
+  password: "your_password"
+  dbname: "your_db_name"
   sslmode: "disable"
 
 http_server:
-  address: "localhost:8064"
+  address: "host:port"
   timeout: 4s
   idle_timeout: 60s
 
