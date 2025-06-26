@@ -1,0 +1,16 @@
+CREATE DATABASE order_service
+    ENCODING 'UTF8'
+    LC_COLLATE 'en_US.UTF-8'
+    LC_CTYPE 'en_US.UTF-8'
+    TEMPLATE template0;
+
+CREATE USER order_admin WITH PASSWORD 'qie2175hs3356';
+
+GRANT CONNECT ON DATABASE order_service TO order_admin;
+\c order_service
+GRANT USAGE ON SCHEMA public TO order_admin;
+GRANT CREATE ON SCHEMA public TO order_admin;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT SELECT, INSERT ON TABLES TO order_admin;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT ALL PRIVILEGES ON SEQUENCES TO order_admin;
