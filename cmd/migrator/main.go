@@ -2,37 +2,68 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
-	"log"
-	"os"
-	"path/filepath"
-
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
-	"github.com/pressly/goose/v3"
+	"log"
 )
 
-type Config struct {
-	DBHost          string
-	DBPort          int
-	DBUser          string
-	DBPass          string
-	DBName          string
-	MigrationPath   string
-	MigrationsTable string
-}
-
 func main() {
-	cfg := parseFlags()
-
-	dsn := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName,
+	var (
+		dbHost          string
+		dbPort          int
+		dbUser          string
+		dbPassword      string
+		dbName          string
+		migrationPath   string
+		migrationsTable string
 	)
 
+	flag.StringVar(&dbHost, "db-host", "localhost", "database host")
+	flag.IntVar(&dbPort, "db-port", 5432, "database port")
+	flag.StringVar(&dbUser, "db-user", "", "database user")
+	flag.StringVar(&dbPassword, "db-password", "", "database password")
+	flag.StringVar(&dbName, "db-name", "", "database name")
+
+	flag.StringVar(&migrationPath, "migration-path", "", "path to migration directory")
+	flag.StringVar(&migrationsTable, "migrations-table", "", "migrations table name")
+	flag.Parse()
+
+	if dbUser == "" || dbPassword == "" || dbName == "" {
+		log.Fatal("db-user, db-password, db-name are required")
+	}
+	if migrationPath == "" {
+		log.Fatal("migration-path is required")
+	}
+
+	dsn := fmt.Sprintf(
+		"postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		dbUser, dbPassword, dbHost, dbPort, dbName,
+	)
+
+	m, err := newMigrator(dsn, migrationPath, migrationsTable)
+	if err != nil {
+		log.Fatalf("failed to create migrator: %v", err)
+	}
+
+	if err := m.Up(); err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			log.Println("no migrations to apply")
+			return
+		}
+		log.Fatalf("migration failed: %v", err)
+	}
+	log.Println("migrations applied successfully")
+}
+
+func newMigrator(dsn, migrationPath, migrationTable string) (*migrate.Migrate, error) {
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 	defer func(db *sql.DB) {
 		var err = db.Close()
@@ -41,56 +72,21 @@ func main() {
 		}
 	}(db)
 
-	if err := runMigrations(db, cfg); err != nil {
-		log.Fatalf("migration failed: %v", err)
-	}
-
-	log.Println("Migrations completed successfully")
-}
-
-func parseFlags() Config {
-	var cfg Config
-
-	flag.StringVar(&cfg.DBHost, "db-host", "localhost", "Database host")
-	flag.IntVar(&cfg.DBPort, "db-port", 5432, "Database port")
-	flag.StringVar(&cfg.DBUser, "db-user", "", "Database user")
-	flag.StringVar(&cfg.DBPass, "db-pass", "", "Database password")
-	flag.StringVar(&cfg.DBName, "db-name", "", "Database name")
-	flag.StringVar(&cfg.MigrationPath, "migration-path", "./migrations", "Path to migrations directory")
-	flag.StringVar(&cfg.MigrationsTable, "migrations-table", "goose_db_version", "Migrations table name")
-
-	flag.Parse()
-
-	if cfg.DBUser == "" || cfg.DBPass == "" || cfg.DBName == "" {
-		log.Fatal("db-user, db-pass and db-name are required parameters")
-	}
-
-	return cfg
-}
-
-func runMigrations(db *sql.DB, cfg Config) error {
-	// Получаем абсолютный путь к миграциям
-	absPath, err := filepath.Abs(cfg.MigrationPath)
+	driver, err := postgres.WithInstance(db, &postgres.Config{
+		MigrationsTable: migrationTable,
+	})
 	if err != nil {
-		return fmt.Errorf("failed to get absolute path: %w", err)
+		return nil, fmt.Errorf("failed to create database driver: %v", err)
 	}
 
-	// Проверка существования директории
-	if _, err := os.Stat(absPath); os.IsNotExist(err) {
-		return fmt.Errorf("migrations directory does not exist at: %s", absPath)
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://"+migrationPath,
+		"postgres",
+		driver,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize migrator: %v", err)
 	}
 
-	log.Printf("Using migrations from: %s", absPath)
-
-	// Настройка goose с абсолютным путем
-	goose.SetBaseFS(os.DirFS(absPath))
-	goose.SetTableName(cfg.MigrationsTable)
-	goose.SetSequential(true)
-
-	// Применение миграций
-	if err := goose.Up(db, absPath); err != nil {
-		return fmt.Errorf("failed to apply migrations: %w", err)
-	}
-
-	return nil
+	return m, nil
 }
