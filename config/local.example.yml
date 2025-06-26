@@ -3,7 +3,7 @@ env: "local"
 database:
   host: "localhost"
   post: 5432
-  user: "postgres"
+  user: "your_user"
   password: "your_password"
   dbname: "your_db_name"
   sslmode: "disable"
