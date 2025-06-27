@@ -14,6 +14,12 @@ type Storage struct {
 	db *sql.DB
 }
 
+type OrderStorage interface {
+	SaveOrder(order models.Order) error
+	GetOrder(orderUID string) (*models.Order, error)
+	GetAllOrders() ([]models.Order, error)
+}
+
 func InitDB(cfg *config.Config) (*Storage, error) {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Database.Host,
