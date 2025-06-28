@@ -16,7 +16,7 @@ http_server:
 kafka:
   brokers: ["localhost:9092"]
   topic: "orders"
-  group_id: "order-service"
+  group_id: "handler-service"
   auto_offset_reset: "earliest"
   max_attempts: 3
   batch_size: 1

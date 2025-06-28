@@ -67,7 +67,7 @@ func (s *Storage) SaveOrder(order models.Order) error {
 		order.Shardkey, order.SmID, order.DateCreated, order.OofShard,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to insert a new order: %v", err)
+		return fmt.Errorf("failed to insert a new handler: %v", err)
 	}
 
 	_, err = tx.Exec(`
@@ -146,7 +146,7 @@ func (s *Storage) GetOrder(orderUID string) (*models.Order, error) {
 		&order.Shardkey, &order.SmID, &order.DateCreated, &order.OofShard,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get order: %v", err)
+		return nil, fmt.Errorf("failed to get handler: %v", err)
 	}
 
 	err = s.db.QueryRow(`
@@ -208,7 +208,7 @@ func (s *Storage) GetOrder(orderUID string) (*models.Order, error) {
 func (s *Storage) GetAllOrders() ([]models.Order, error) {
 	rows, err := s.db.Query(`SELECT order_uid FROM orders`)
 	if err != nil {
-		log.Printf("failed to get order uid: %v", err)
+		log.Printf("failed to get handler uid: %v", err)
 	}
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
@@ -221,12 +221,12 @@ func (s *Storage) GetAllOrders() ([]models.Order, error) {
 	for rows.Next() {
 		var orderUID string
 		if err := rows.Scan(&orderUID); err != nil {
-			return nil, fmt.Errorf("failed to scan order uid: %v", err)
+			return nil, fmt.Errorf("failed to scan handler uid: %v", err)
 		}
 
 		order, err := s.GetOrder(orderUID)
 		if err != nil {
-			log.Printf("failed to get order %s: %v", orderUID, err)
+			log.Printf("failed to get handler %s: %v", orderUID, err)
 			continue
 		}
 		orders = append(orders, *order)

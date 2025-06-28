@@ -16,14 +16,14 @@ func New() *OrderCache {
 	}
 }
 
-// Set adds an order to the cache
+// Set adds an handler to the cache
 func (c *OrderCache) Set(order models.Order) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.items[order.OrderUID] = order
 }
 
-// Get returns an order by its UID
+// Get returns an handler by its UID
 func (c *OrderCache) Get(orderUID string) (models.Order, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

@@ -32,7 +32,7 @@ type HTTPServer struct {
 type Kafka struct {
 	Brokers         []string `yaml:"brokers" env-default:"localhost:9092"`
 	Topic           string   `yaml:"topic" env-required:"true"`
-	GroupID         string   `yaml:"group_id" env-default:"order-service"`
+	GroupID         string   `yaml:"group_id" env-default:"handler-service"`
 	AutoOffsetReset string   `yaml:"auto_offset_reset" env-default:"earliest"`
 	MaxAttempts     int      `yaml:"max_attempts" env-default:"3"`
 	BatchSize       int      `yaml:"batch_size" env-default:"1"`

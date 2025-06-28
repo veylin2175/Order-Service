@@ -1,10 +1,13 @@
 package main
 
 import (
+	"L0/internal/cache"
 	"L0/internal/config"
+	"L0/internal/http-server/handlers/handler"
 	"L0/internal/http-server/middleware/mwlogger"
 	"L0/internal/lib/logger/handlers/slogpretty"
 	"L0/internal/lib/logger/sl"
+	"L0/internal/service"
 	"L0/internal/storage/postgres"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -26,7 +29,7 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 
-	log.Info("Starting order service", slog.String("env", cfg.Env))
+	log.Info("Starting handler service", slog.String("env", cfg.Env))
 	log.Debug("Debug messages are enabled")
 
 	storage, err := postgres.InitDB(cfg)
@@ -37,12 +40,27 @@ func main() {
 
 	_ = storage
 
+	orderCache := cache.New()
+
+	orderService := service.New(storage, orderCache)
+
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
 	router.Use(mwlogger.New(log))
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
+
+	// API routes
+	router.Route("/api", func(r chi.Router) {
+		r.Route("/orders", func(r chi.Router) {
+			orderHandler := handler.NewOrderHandler(orderService)
+
+			r.Get("/", orderHandler.ListOrders)         // GET /api/orders
+			r.Post("/", orderHandler.CreateOrder)       // POST /api/orders
+			r.Get("/{orderUID}", orderHandler.GetOrder) // GET /api/orders/123
+		})
+	})
 
 	log.Info("starting server", slog.String("address", cfg.HTTPServer.Address))
 
@@ -96,7 +114,7 @@ func setupPrettySlog() *slog.Logger {
 		},
 	}
 
-	handler := opts.NewPrettyHandler(os.Stdout)
+	h := opts.NewPrettyHandler(os.Stdout)
 
-	return slog.New(handler)
+	return slog.New(h)
 }
