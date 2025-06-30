@@ -62,6 +62,9 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
+	router.Handle("/", http.FileServer(http.Dir("./static")))
+	router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+
 	// API routes
 	router.Route("/api", func(r chi.Router) {
 		r.Route("/orders", func(r chi.Router) {
