@@ -30,13 +30,11 @@ type HTTPServer struct {
 }
 
 type Kafka struct {
-	Brokers         []string `yaml:"brokers" env-default:"localhost:9092"`
+	Brokers         []string `yaml:"brokers" env-required:"true"`
 	Topic           string   `yaml:"topic" env-required:"true"`
-	GroupID         string   `yaml:"group_id" env-default:"handler-service"`
+	GroupID         string   `yaml:"group_id" env-default:"order-service"`
 	AutoOffsetReset string   `yaml:"auto_offset_reset" env-default:"earliest"`
-	MaxAttempts     int      `yaml:"max_attempts" env-default:"3"`
-	BatchSize       int      `yaml:"batch_size" env-default:"1"`
-	Workers         int      `yaml:"workers" env-default:"1"`
+	MaxPollRecords  int      `yaml:"max_poll_records" env-default:"1"`
 }
 
 func MustLoad() *Config {

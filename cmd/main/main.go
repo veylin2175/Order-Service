@@ -5,16 +5,19 @@ import (
 	"L0/internal/config"
 	"L0/internal/http-server/handlers/handler"
 	"L0/internal/http-server/middleware/mwlogger"
+	"L0/internal/kafka/consumer"
 	"L0/internal/lib/logger/handlers/slogpretty"
 	"L0/internal/lib/logger/sl"
 	"L0/internal/service"
 	"L0/internal/storage/postgres"
+	"context"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 )
 
@@ -43,6 +46,14 @@ func main() {
 	orderCache := cache.New()
 
 	orderService := service.New(storage, orderCache)
+
+	kafkaConsumer := consumer.NewConsumer(cfg.Kafka, orderService)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	go kafkaConsumer.Run(ctx, wg)
 
 	router := chi.NewRouter()
 
@@ -79,11 +90,15 @@ func main() {
 	// Graceful shutdown
 
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT, os.Interrupt)
 
 	sign := <-stop
 
-	log.Info("application stopped", slog.String("signal", sign.String()))
+	log.Info("application stopping", slog.String("signal", sign.String()))
+	cancel()
+	wg.Wait()
+
+	log.Info("application stopped")
 
 	if err := storage.Close(); err != nil {
 		log.Error("failed to close database", slog.String("error", err.Error()))

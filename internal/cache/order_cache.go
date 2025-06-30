@@ -16,7 +16,7 @@ func New() *OrderCache {
 	}
 }
 
-// Set adds an handler to the cache
+// Set adds a handler to the cache
 func (c *OrderCache) Set(order models.Order) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
