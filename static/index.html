@@ -1,25 +1,211 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Viewer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .order-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .status-delivered {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .status-pending {
+            color: #f39c12;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-<h1>Order Viewer</h1>
-<input type="text" id="orderId" placeholder="Enter Order ID">
-<button onclick="getOrder()">Get Order</button>
-<pre id="result"></pre>
+<h1>Order Information</h1>
+
+<div class="search-box">
+    <input type="text" id="orderId" placeholder="Enter Order ID">
+    <button onclick="getOrder()">Search</button>
+</div>
+
+<div id="orderResult" class="order-card" style="display: none;">
+    <h2>Order Details</h2>
+    <div id="orderData"></div>
+</div>
 
 <script>
     function getOrder() {
         const orderId = document.getElementById('orderId').value;
+        if (!orderId) {
+            alert('Please enter Order ID');
+            return;
+        }
+
+        document.getElementById('orderResult').style.display = 'none';
+
         fetch(`/api/orders/${orderId}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Order not found');
+                }
+                return response.json();
+            })
             .then(data => {
-                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+                renderOrder(data);
+                document.getElementById('orderResult').style.display = 'block';
             })
             .catch(error => {
-                document.getElementById('result').textContent = 'Error: ' + error;
+                alert(error.message);
+                console.error('Error:', error);
             });
+    }
+
+    function renderOrder(order) {
+        const orderData = document.getElementById('orderData');
+
+        // Обрабатываем items - заменяем null на пустой массив
+        const items = (order.items === null || !Array.isArray(order.items)) ? [] : order.items;
+
+        // Создаем безопасные объекты для вложенных структур
+        const delivery = order.delivery || {};
+        const payment = order.payment || {};
+
+        // Основная информация о заказе
+        let html = `
+        <table>
+            <tr>
+                <th>Order ID</th>
+                <td>${order.order_uid || 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>Track Number</th>
+                <td>${order.track_number || 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>Date Created</th>
+                <td>${order.date_created ? new Date(order.date_created).toLocaleString() : 'N/A'}</td>
+            </tr>
+        </table>
+
+        <h3>Delivery Information</h3>
+        <table>
+            <tr>
+                <th>Recipient</th>
+                <td>${delivery.name || 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>Address</th>
+                <td>${delivery.city || ''}, ${delivery.address || 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>Contact</th>
+                <td>${delivery.phone || 'N/A'} | ${delivery.email || 'N/A'}</td>
+            </tr>
+        </table>
+
+        <h3>Payment Information</h3>
+        <table>
+            <tr>
+                <th>Amount</th>
+                <td>${payment.amount ? '$' + payment.amount : 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>Currency</th>
+                <td>${payment.currency || 'N/A'}</td>
+            </tr>
+            <tr>
+                <th>Provider</th>
+                <td>${payment.provider || 'N/A'}</td>
+            </tr>
+        </table>
+    `;
+
+        // Добавляем товары только если они есть
+        if (items && items.length > 0) {
+            html += `
+            <h3>Items (${items.length})</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Brand</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+            items.forEach(item => {
+                html += `
+                <tr>
+                    <td>${item.name || 'N/A'}</td>
+                    <td>${item.brand || 'N/A'}</td>
+                    <td>${item.price ? '$' + item.price : 'N/A'}</td>
+                    <td>1</td>
+                    <td>${item.total_price ? '$' + item.total_price : 'N/A'}</td>
+                </tr>
+            `;
+            });
+
+            html += `
+                </tbody>
+            </table>
+        `;
+        } else {
+            html += `<div class="no-items">No items in this order</div>`;
+        }
+
+        orderData.innerHTML = html;
     }
 </script>
 </body>
