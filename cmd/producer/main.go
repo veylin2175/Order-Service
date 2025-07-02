@@ -13,11 +13,13 @@ import (
 func main() {
 	cfg := config.MustLoad()
 
+	// Создаем объект продюсера
 	writer := kafka.Writer{
 		Addr:  kafka.TCP(cfg.Kafka.Brokers[0]),
 		Topic: cfg.Kafka.Topic,
 	}
 
+	// Заполняем тестовые данные для отправки
 	order := models.Order{
 		OrderUID:    "test123",
 		TrackNumber: "123456",

@@ -28,13 +28,16 @@ const (
 )
 
 func main() {
+	// Выгружаем конфиги
 	cfg := config.MustLoad()
 
+	// Устанавливаем логгер
 	log := setupLogger(cfg.Env)
 
 	log.Info("Starting handler service", slog.String("env", cfg.Env))
 	log.Debug("Debug messages are enabled")
 
+	// Инициализируем хранилище
 	storage, err := postgres.InitDB(cfg)
 	if err != nil {
 		log.Error("failed to init storage", sl.Err(err))
@@ -43,6 +46,7 @@ func main() {
 
 	_ = storage
 
+	// Инициализируем кеши, сервис и кафку
 	orderCache := cache.New()
 
 	orderService := service.New(storage, orderCache)
@@ -55,6 +59,7 @@ func main() {
 
 	go kafkaConsumer.Run(ctx, wg)
 
+	// Запускаем http роутер
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
@@ -78,6 +83,7 @@ func main() {
 
 	log.Info("starting server", slog.String("address", cfg.HTTPServer.Address))
 
+	// Запускаем сервер
 	srv := &http.Server{
 		Addr:         cfg.HTTPServer.Address,
 		Handler:      router,
@@ -110,6 +116,7 @@ func main() {
 	log.Info("postgres connection closed")
 }
 
+// setupLogger создает логгер с различными хендерами и уровнями логирования в зависимости от окружения
 func setupLogger(env string) *slog.Logger {
 	var log *slog.Logger
 
@@ -125,6 +132,7 @@ func setupLogger(env string) *slog.Logger {
 	return log
 }
 
+// setupPrettySlog создает логгер с удобным выводом данных для локала
 func setupPrettySlog() *slog.Logger {
 	opts := slogpretty.PrettyHandlerOptions{
 		SlogOpts: &slog.HandlerOptions{

@@ -23,6 +23,7 @@ func main() {
 		migrationsTable string
 	)
 
+	// Парсим необходимые для миграций данные
 	flag.StringVar(&dbHost, "db-host", "localhost", "database host")
 	flag.IntVar(&dbPort, "db-port", 5432, "database port")
 	flag.StringVar(&dbUser, "db-user", "", "database user")
@@ -40,11 +41,13 @@ func main() {
 		log.Fatal("migration-path is required")
 	}
 
+	// Устанавливаем соединение с postgreSQL
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		dbUser, dbPassword, dbHost, dbPort, dbName,
 	)
 
+	// Создаем мигратор
 	m, err := newMigrator(dsn, migrationPath, migrationsTable)
 	if err != nil {
 		log.Fatalf("failed to create migrator: %v", err)
@@ -60,6 +63,7 @@ func main() {
 	log.Println("migrations applied successfully")
 }
 
+// newMigrator создает новый мигратор бд
 func newMigrator(dsn, migrationPath, migrationTable string) (*migrate.Migrate, error) {
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {

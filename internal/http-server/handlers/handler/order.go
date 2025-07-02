@@ -16,10 +16,12 @@ type OrderHandler struct {
 	service *service.OrderService
 }
 
+// NewOrderHandler создает новый хендлер
 func NewOrderHandler(s *service.OrderService) *OrderHandler {
 	return &OrderHandler{service: s}
 }
 
+// GetOrder получает заказ
 func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
 	orderUID := chi.URLParam(r, "orderUID")
 	if orderUID == "" {
@@ -43,6 +45,7 @@ func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, order)
 }
 
+// CreateOrder создает новый заказ
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	var order models.Order
 	if err := json.NewDecoder(r.Body).Decode(&order); err != nil {
@@ -62,7 +65,6 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
-	// Реализация получения списка заказов
 	orders := h.service.GetAllOrders()
 	render.JSON(w, r, orders)
 }

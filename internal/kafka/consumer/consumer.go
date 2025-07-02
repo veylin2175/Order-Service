@@ -16,6 +16,7 @@ type Consumer struct {
 	service *service.OrderService
 }
 
+// NewConsumer создает новый консюмер кафки
 func NewConsumer(cfg config.Kafka, orderService *service.OrderService) *Consumer {
 	return &Consumer{
 		reader: kafka.NewReader(kafka.ReaderConfig{
@@ -29,6 +30,7 @@ func NewConsumer(cfg config.Kafka, orderService *service.OrderService) *Consumer
 	}
 }
 
+// Run запускает консюмер
 func (c *Consumer) Run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 

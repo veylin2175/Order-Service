@@ -5,6 +5,7 @@ import (
 	"log/slog"
 )
 
+// NewDiscardLogger создает логгер для тестов, который не выводит никакие логи
 func NewDiscardLogger() *slog.Logger {
 	return slog.New(NewDiscardHandler())
 }

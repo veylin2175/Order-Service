@@ -52,6 +52,7 @@ func main() {
 	log.Println("Database initialized successfully")
 }
 
+// initDatabase создает базу данных, если та не существует; создает юзера бд с грантом прав
 func initDatabase(db *sql.DB, cfg *config.Config) error {
 	// Проверка существования БД
 	var dbExists bool

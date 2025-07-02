@@ -21,6 +21,7 @@ type PrettyHandler struct {
 	attrs []slog.Attr
 }
 
+// NewPrettyHandler создает логгер для красивого и понятного вывода логов
 func (opts PrettyHandlerOptions) NewPrettyHandler(
 	out io.Writer,
 ) *PrettyHandler {

@@ -10,20 +10,21 @@ type OrderCache struct {
 	items map[string]models.Order
 }
 
+// New создает новый объект кеша
 func New() *OrderCache {
 	return &OrderCache{
 		items: make(map[string]models.Order),
 	}
 }
 
-// Set adds a handler to the cache
+// Set добавляет хендлер в кеш
 func (c *OrderCache) Set(order models.Order) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.items[order.OrderUID] = order
 }
 
-// Get returns an handler by its UID
+// Get возвращает хендлер по его UID
 func (c *OrderCache) Get(orderUID string) (models.Order, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -31,7 +32,7 @@ func (c *OrderCache) Get(orderUID string) (models.Order, bool) {
 	return item, exists
 }
 
-// GetAll returns all the orders
+// GetAll возвращает все заказы
 func (c *OrderCache) GetAll() []models.Order {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -43,7 +44,7 @@ func (c *OrderCache) GetAll() []models.Order {
 	return orders
 }
 
-// Preload loads data from the db on the start
+// Preload выгружает данные из БД при старте
 func (c *OrderCache) Preload(loader func() ([]models.Order, error)) error {
 	orders, err := loader()
 	if err != nil {

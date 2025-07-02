@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Config анмаршлит данные из конфига в структуры
 type Config struct {
 	Env        string     `yaml:"env" env-default:"local"`
 	Database   Database   `yaml:"database"`
@@ -37,6 +38,7 @@ type Kafka struct {
 	MaxPollRecords  int      `yaml:"max_poll_records" env-default:"1"`
 }
 
+// MustLoad выгружает данные с конфига по пути до файла
 func MustLoad() *Config {
 	path := fetchConfigPath()
 

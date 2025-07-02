@@ -20,6 +20,7 @@ type OrderStorage interface {
 	GetAllOrders() ([]models.Order, error)
 }
 
+// InitDB создает подключение к бд
 func InitDB(cfg *config.Config) (*Storage, error) {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Database.Host,
@@ -44,6 +45,7 @@ func InitDB(cfg *config.Config) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
+// SaveOrder сохраняет заказ в БД
 func (s *Storage) SaveOrder(order models.Order) error {
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -133,6 +135,7 @@ func (s *Storage) SaveOrder(order models.Order) error {
 	return tx.Commit()
 }
 
+// GetOrder получает заказ из БД
 func (s *Storage) GetOrder(orderUID string) (*models.Order, error) {
 	var order models.Order
 
@@ -205,6 +208,7 @@ func (s *Storage) GetOrder(orderUID string) (*models.Order, error) {
 	return &order, nil
 }
 
+// GetAllOrders получает список всех заказов из БД
 func (s *Storage) GetAllOrders() ([]models.Order, error) {
 	rows, err := s.db.Query(`SELECT order_uid FROM orders`)
 	if err != nil {
@@ -235,6 +239,7 @@ func (s *Storage) GetAllOrders() ([]models.Order, error) {
 	return orders, nil
 }
 
+// Close закрывает соединение с БД
 func (s *Storage) Close() error {
 	return s.db.Close()
 }

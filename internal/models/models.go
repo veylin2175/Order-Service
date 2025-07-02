@@ -2,6 +2,7 @@ package models
 
 import "time"
 
+// Order является моделью данных
 type Order struct {
 	OrderUID          string    `json:"order_uid"`
 	TrackNumber       string    `json:"track_number"`
